@@ -1,0 +1,295 @@
+:root {
+  --bg: #0f1115;
+  --surface: #1a1d24;
+  --surface-2: #22262f;
+  --border: #2e333d;
+  --text: #e8e9ec;
+  --muted: #8a8f9a;
+  --accent: #ff5a3c;
+  --accent-hover: #ff7a5c;
+  --danger: #e5484d;
+  --radius: 10px;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.app-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.app-header h1 {
+  margin: 0;
+  font-size: 22px;
+}
+
+.layout {
+  display: flex;
+  min-height: calc(100vh - 65px);
+}
+
+.sidebar {
+  width: 260px;
+  flex-shrink: 0;
+  padding: 20px;
+  border-right: 1px solid var(--border);
+}
+
+.sidebar h2 {
+  margin: 0 0 12px;
+  font-size: 15px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.inline-form {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.inline-form input {
+  flex: 1;
+  min-width: 0;
+}
+
+.exercise-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.exercise-list li {
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  color: var(--muted);
+}
+
+.exercise-list li:hover {
+  background: var(--surface);
+}
+
+.exercise-list li.active {
+  background: var(--accent);
+  color: white;
+  font-weight: 600;
+}
+
+.content {
+  flex: 1;
+  padding: 24px;
+  max-width: 900px;
+}
+
+.empty-state {
+  color: var(--muted);
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.content-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.content-header h2 {
+  margin: 0;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.card h3 {
+  margin-top: 0;
+  font-size: 15px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.form-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.form-row label {
+  width: 60px;
+  color: var(--muted);
+}
+
+.set-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.set-row span.set-index {
+  width: 24px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.set-row input {
+  width: 90px;
+}
+
+.remove-set-btn {
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 16px;
+  padding: 4px 8px;
+}
+
+.remove-set-btn:hover {
+  color: var(--danger);
+}
+
+input, select {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  padding: 10px 12px;
+  font-size: 15px;
+}
+
+input:focus {
+  outline: 2px solid var(--accent);
+}
+
+button {
+  border: none;
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-size: 15px;
+  cursor: pointer;
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+button:hover {
+  filter: brightness(1.15);
+}
+
+.primary-btn {
+  background: var(--accent);
+  color: white;
+  font-weight: 600;
+}
+
+.primary-btn:hover {
+  background: var(--accent-hover);
+}
+
+.danger-btn {
+  background: transparent;
+  color: var(--danger);
+  border: 1px solid var(--danger);
+}
+
+.form-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 16px;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.chart-container {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.history-entry {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+}
+
+.history-entry-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.history-entry-header .date {
+  font-weight: 600;
+}
+
+.history-entry-header button {
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  padding: 2px 8px;
+}
+
+.history-entry-header button:hover {
+  color: var(--danger);
+}
+
+.history-sets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.history-set-chip {
+  background: var(--surface-2);
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 13px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 700px) {
+  .layout {
+    flex-direction: column;
+  }
+  .sidebar {
+    width: auto;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+  .content {
+    max-width: none;
+  }
+}

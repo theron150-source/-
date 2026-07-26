@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Krachttraining Tracker</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <header class="app-header">
+    <h1>💪 Krachttraining Tracker</h1>
+  </header>
+
+  <main class="layout">
+    <aside class="sidebar">
+      <h2>Oefeningen</h2>
+      <form id="add-exercise-form" class="inline-form">
+        <input type="text" id="new-exercise-name" placeholder="Nieuwe oefening..." required>
+        <button type="submit">+</button>
+      </form>
+      <ul id="exercise-list" class="exercise-list"></ul>
+    </aside>
+
+    <section class="content">
+      <div id="empty-state" class="empty-state">
+        <p>Selecteer of voeg een oefening toe om te beginnen.</p>
+      </div>
+
+      <div id="exercise-view" class="exercise-view hidden">
+        <div class="content-header">
+          <h2 id="exercise-title"></h2>
+          <button id="delete-exercise-btn" class="danger-btn">Verwijder oefening</button>
+        </div>
+
+        <div class="card">
+          <h3>Nieuwe sessie loggen</h3>
+          <form id="log-form">
+            <div class="form-row">
+              <label for="log-date">Datum</label>
+              <input type="date" id="log-date" required>
+            </div>
+            <div id="sets-container"></div>
+            <div class="form-actions">
+              <button type="button" id="add-set-btn">+ Set toevoegen</button>
+              <button type="submit" class="primary-btn">Sessie opslaan</button>
+            </div>
+          </form>
+        </div>
+
+        <div class="card">
+          <h3>Voortgang (geschat 1RM)</h3>
+          <div id="chart-container" class="chart-container">
+            <p class="muted" id="chart-empty">Nog geen data om te tonen.</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Geschiedenis</h3>
+          <div id="history-list" class="history-list"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
