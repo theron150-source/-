@@ -18,11 +18,15 @@
 
   <nav class="tabs">
     <button type="button" class="tab-btn active" data-tab="log">Trainingslog</button>
+    <button type="button" class="tab-btn" data-tab="templates">Schema's</button>
     <button type="button" class="tab-btn" data-tab="volume">Spieropbouw</button>
   </nav>
 
   <main class="layout" id="log-tab">
     <aside class="sidebar">
+      <h2>Dagschema</h2>
+      <select id="template-filter" class="template-filter"></select>
+
       <h2>Oefeningen</h2>
       <form id="add-exercise-form" class="inline-form">
         <input type="text" id="new-exercise-name" placeholder="Nieuwe oefening..." required>
@@ -89,6 +93,39 @@
         <div class="card">
           <h3>Geschiedenis</h3>
           <div id="history-list" class="history-list"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <main class="layout hidden" id="templates-tab">
+    <aside class="sidebar">
+      <h2>Trainingsdagen</h2>
+      <form id="add-template-form" class="inline-form">
+        <input type="text" id="new-template-name" placeholder="Bv. Push Day..." required>
+        <button type="submit">+</button>
+      </form>
+      <ul id="template-list" class="exercise-list"></ul>
+    </aside>
+
+    <section class="content">
+      <div id="template-empty-state" class="empty-state">
+        <p>Selecteer of voeg een trainingsdag toe om oefeningen toe te wijzen.</p>
+      </div>
+
+      <div id="template-view" class="exercise-view hidden">
+        <div class="content-header">
+          <h2 id="template-title"></h2>
+          <button id="delete-template-btn" class="danger-btn">Verwijder schema</button>
+        </div>
+
+        <div class="card">
+          <h3>Oefeningen in dit schema</h3>
+          <div id="template-exercise-list" class="template-exercise-list"></div>
+          <div class="form-row template-add-row">
+            <select id="template-add-exercise"></select>
+            <button type="button" id="template-add-exercise-btn">Toevoegen</button>
+          </div>
         </div>
       </div>
     </section>

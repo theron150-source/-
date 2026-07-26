@@ -7,12 +7,13 @@ const MUSCLE_GROUPS = ['Borst', 'Rug', 'Benen', 'Schouders', 'Biceps', 'Triceps'
 function loadData() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { exercises: [], logs: [] };
+    if (!raw) return { exercises: [], logs: [], templates: [] };
     const parsed = JSON.parse(raw);
     parsed.exercises.forEach(e => { if (!e.muscleGroup) e.muscleGroup = 'Overig'; });
+    if (!parsed.templates) parsed.templates = [];
     return parsed;
   } catch (e) {
-    return { exercises: [], logs: [] };
+    return { exercises: [], logs: [], templates: [] };
   }
 }
 
@@ -60,6 +61,8 @@ const state = loadData();
 const settings = loadSettings();
 let selectedExerciseId = state.exercises[0]?.id || null;
 let activeTab = 'log';
+let logTemplateFilterId = 'all';
+let selectedTemplateId = state.templates[0]?.id || null;
 
 const exerciseListEl = document.getElementById('exercise-list');
 const emptyStateEl = document.getElementById('empty-state');
@@ -75,6 +78,14 @@ const newExerciseMuscleEl = document.getElementById('new-exercise-muscle');
 const volumeListEl = document.getElementById('volume-list');
 const logTabEl = document.getElementById('log-tab');
 const volumeTabEl = document.getElementById('volume-tab');
+const templatesTabEl = document.getElementById('templates-tab');
+const templateFilterEl = document.getElementById('template-filter');
+const templateListEl = document.getElementById('template-list');
+const templateEmptyStateEl = document.getElementById('template-empty-state');
+const templateViewEl = document.getElementById('template-view');
+const templateTitleEl = document.getElementById('template-title');
+const templateExerciseListEl = document.getElementById('template-exercise-list');
+const templateAddExerciseEl = document.getElementById('template-add-exercise');
 
 MUSCLE_GROUPS.forEach(group => {
   const opt = document.createElement('option');
@@ -89,10 +100,33 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     activeTab = btn.dataset.tab;
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b === btn));
     logTabEl.classList.toggle('hidden', activeTab !== 'log');
+    templatesTabEl.classList.toggle('hidden', activeTab !== 'templates');
     volumeTabEl.classList.toggle('hidden', activeTab !== 'volume');
+    if (activeTab === 'log') renderTemplateFilterOptions();
     if (activeTab === 'volume') renderVolume();
+    if (activeTab === 'templates') renderTemplatesTab();
   });
 });
+
+// --- Dagschema filter (log tab) ---
+templateFilterEl.addEventListener('change', () => {
+  logTemplateFilterId = templateFilterEl.value;
+  renderExerciseList();
+});
+
+function renderTemplateFilterOptions() {
+  const previous = logTemplateFilterId;
+  templateFilterEl.innerHTML = '<option value="all">Alle oefeningen</option>';
+  state.templates.forEach(t => {
+    const opt = document.createElement('option');
+    opt.value = t.id;
+    opt.textContent = t.name;
+    templateFilterEl.appendChild(opt);
+  });
+  const stillExists = previous === 'all' || state.templates.some(t => t.id === previous);
+  logTemplateFilterId = stillExists ? previous : 'all';
+  templateFilterEl.value = logTemplateFilterId;
+}
 
 // --- Unit toggle ---
 document.querySelectorAll('.unit-btn').forEach(btn => {
@@ -132,6 +166,7 @@ document.getElementById('delete-exercise-btn').addEventListener('click', () => {
   if (!confirm(`Oefening "${exercise.name}" en alle bijbehorende geschiedenis verwijderen?`)) return;
   state.exercises = state.exercises.filter(e => e.id !== selectedExerciseId);
   state.logs = state.logs.filter(l => l.exerciseId !== selectedExerciseId);
+  state.templates.forEach(t => { t.exerciseIds = t.exerciseIds.filter(id => id !== selectedExerciseId); });
   selectedExerciseId = state.exercises[0]?.id || null;
   saveData();
   render();
@@ -198,13 +233,30 @@ function selectExercise(id) {
 
 function renderExerciseList() {
   exerciseListEl.innerHTML = '';
-  state.exercises.forEach(exercise => {
+
+  let exercises = state.exercises;
+  if (logTemplateFilterId !== 'all') {
+    const template = state.templates.find(t => t.id === logTemplateFilterId);
+    if (template) {
+      exercises = template.exerciseIds
+        .map(id => state.exercises.find(e => e.id === id))
+        .filter(Boolean);
+    }
+  }
+
+  const today = todayStr();
+  exercises.forEach(exercise => {
+    const loggedToday = state.logs.some(l => l.exerciseId === exercise.id && l.date === today);
     const li = document.createElement('li');
-    li.innerHTML = `${exercise.name}<span class="muscle-hint">${exercise.muscleGroup}</span>`;
+    li.innerHTML = `${exercise.name}${loggedToday ? '<span class="done-check">✓</span>' : ''}<span class="muscle-hint">${exercise.muscleGroup}</span>`;
     if (exercise.id === selectedExerciseId) li.classList.add('active');
     li.addEventListener('click', () => selectExercise(exercise.id));
     exerciseListEl.appendChild(li);
   });
+
+  if (exercises.length === 0 && logTemplateFilterId !== 'all') {
+    exerciseListEl.innerHTML = '<li class="muted" style="cursor:default">Dit schema heeft nog geen oefeningen.</li>';
+  }
 }
 
 function getLogsForExercise(exerciseId) {
@@ -420,6 +472,143 @@ function resetTimer() {
   updateTimerDisplay();
 }
 
+// --- Trainingsdag schema's (templates) ---
+document.getElementById('add-template-form').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const input = document.getElementById('new-template-name');
+  const name = input.value.trim();
+  if (!name) return;
+  const template = { id: uid(), name, exerciseIds: [] };
+  state.templates.push(template);
+  saveData();
+  input.value = '';
+  selectedTemplateId = template.id;
+  renderTemplatesTab();
+});
+
+document.getElementById('delete-template-btn').addEventListener('click', () => {
+  if (!selectedTemplateId) return;
+  const template = state.templates.find(t => t.id === selectedTemplateId);
+  if (!template) return;
+  if (!confirm(`Schema "${template.name}" verwijderen?`)) return;
+  state.templates = state.templates.filter(t => t.id !== selectedTemplateId);
+  selectedTemplateId = state.templates[0]?.id || null;
+  saveData();
+  renderTemplatesTab();
+});
+
+document.getElementById('template-add-exercise-btn').addEventListener('click', () => {
+  if (!selectedTemplateId) return;
+  const exerciseId = templateAddExerciseEl.value;
+  if (!exerciseId) return;
+  const template = state.templates.find(t => t.id === selectedTemplateId);
+  if (!template || template.exerciseIds.includes(exerciseId)) return;
+  template.exerciseIds.push(exerciseId);
+  saveData();
+  renderTemplatesTab();
+});
+
+function selectTemplate(id) {
+  selectedTemplateId = id;
+  renderTemplatesTab();
+}
+
+function renderTemplateList() {
+  templateListEl.innerHTML = '';
+  state.templates.forEach(template => {
+    const li = document.createElement('li');
+    li.innerHTML = `${template.name}<span class="muscle-hint">${template.exerciseIds.length} oefeningen</span>`;
+    if (template.id === selectedTemplateId) li.classList.add('active');
+    li.addEventListener('click', () => selectTemplate(template.id));
+    templateListEl.appendChild(li);
+  });
+}
+
+function renderTemplateExercisePicker(template) {
+  templateAddExerciseEl.innerHTML = '';
+  const available = state.exercises.filter(e => !template.exerciseIds.includes(e.id));
+  if (available.length === 0) {
+    const opt = document.createElement('option');
+    opt.value = '';
+    opt.textContent = state.exercises.length === 0
+      ? 'Voeg eerst oefeningen toe in Trainingslog'
+      : 'Alle oefeningen al toegevoegd';
+    templateAddExerciseEl.appendChild(opt);
+    document.getElementById('template-add-exercise-btn').disabled = true;
+    return;
+  }
+  document.getElementById('template-add-exercise-btn').disabled = false;
+  available.forEach(exercise => {
+    const opt = document.createElement('option');
+    opt.value = exercise.id;
+    opt.textContent = `${exercise.name} (${exercise.muscleGroup})`;
+    templateAddExerciseEl.appendChild(opt);
+  });
+}
+
+function moveTemplateExercise(template, index, direction) {
+  const newIndex = index + direction;
+  if (newIndex < 0 || newIndex >= template.exerciseIds.length) return;
+  const ids = template.exerciseIds;
+  [ids[index], ids[newIndex]] = [ids[newIndex], ids[index]];
+  saveData();
+  renderTemplatesTab();
+}
+
+function renderTemplateExerciseList(template) {
+  templateExerciseListEl.innerHTML = '';
+  if (template.exerciseIds.length === 0) {
+    templateExerciseListEl.innerHTML = '<p class="muted">Nog geen oefeningen in dit schema.</p>';
+    return;
+  }
+  template.exerciseIds.forEach((exerciseId, index) => {
+    const exercise = state.exercises.find(e => e.id === exerciseId);
+    if (!exercise) return;
+    const row = document.createElement('div');
+    row.className = 'template-exercise-row';
+    row.innerHTML = `
+      <span class="order-index">${index + 1}</span>
+      <span class="ex-name">${exercise.name}</span>
+      <span class="ex-muscle">${exercise.muscleGroup}</span>
+      <button type="button" class="move-btn" data-dir="-1" title="Omhoog">↑</button>
+      <button type="button" class="move-btn" data-dir="1" title="Omlaag">↓</button>
+      <button type="button" class="remove-btn" title="Verwijder uit schema">✕</button>
+    `;
+    row.querySelectorAll('.move-btn').forEach(btn => {
+      btn.addEventListener('click', () => moveTemplateExercise(template, index, parseInt(btn.dataset.dir, 10)));
+    });
+    row.querySelector('.remove-btn').addEventListener('click', () => {
+      template.exerciseIds = template.exerciseIds.filter(id => id !== exerciseId);
+      saveData();
+      renderTemplatesTab();
+    });
+    templateExerciseListEl.appendChild(row);
+  });
+}
+
+function renderTemplatesTab() {
+  renderTemplateList();
+
+  if (!selectedTemplateId) {
+    templateEmptyStateEl.classList.remove('hidden');
+    templateViewEl.classList.add('hidden');
+    return;
+  }
+
+  const template = state.templates.find(t => t.id === selectedTemplateId);
+  if (!template) {
+    selectedTemplateId = state.templates[0]?.id || null;
+    renderTemplatesTab();
+    return;
+  }
+
+  templateEmptyStateEl.classList.add('hidden');
+  templateViewEl.classList.remove('hidden');
+  templateTitleEl.textContent = template.name;
+  renderTemplateExerciseList(template);
+  renderTemplateExercisePicker(template);
+}
+
 // --- Volume overview (hypertrophy) ---
 function renderVolume() {
   const cutoff = new Date();
@@ -462,6 +651,7 @@ function renderVolume() {
 
 // --- Main render ---
 function render() {
+  renderTemplateFilterOptions();
   renderExerciseList();
 
   if (!selectedExerciseId) {

@@ -109,6 +109,73 @@ body {
   margin-bottom: 16px;
 }
 
+.template-filter {
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+.sidebar h2 {
+  margin-top: 20px;
+}
+
+.sidebar h2:first-child {
+  margin-top: 0;
+}
+
+.exercise-list .done-check {
+  color: #3ecf7f;
+  margin-left: 6px;
+}
+
+.template-exercise-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.template-exercise-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--surface-2);
+  border-radius: 8px;
+}
+
+.template-exercise-row .order-index {
+  color: var(--muted);
+  width: 20px;
+}
+
+.template-exercise-row .ex-name {
+  flex: 1;
+}
+
+.template-exercise-row .ex-muscle {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.template-exercise-row .move-btn,
+.template-exercise-row .remove-btn {
+  background: transparent;
+  color: var(--muted);
+  padding: 2px 8px;
+}
+
+.template-exercise-row .remove-btn:hover {
+  color: var(--danger);
+}
+
+.template-add-row {
+  gap: 10px;
+}
+
+.template-add-row select {
+  flex: 1;
+}
+
 .exercise-list {
   list-style: none;
   margin: 0;
