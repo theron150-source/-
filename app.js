@@ -1,17 +1,37 @@
 const STORAGE_KEY = 'krachttraining_data_v1';
+const SETTINGS_KEY = 'krachttraining_settings_v1';
+const KG_TO_LBS = 2.20462;
+
+const MUSCLE_GROUPS = ['Borst', 'Rug', 'Benen', 'Schouders', 'Biceps', 'Triceps', 'Buik', 'Overig'];
 
 function loadData() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return { exercises: [], logs: [] };
-    return JSON.parse(raw);
+    const parsed = JSON.parse(raw);
+    parsed.exercises.forEach(e => { if (!e.muscleGroup) e.muscleGroup = 'Overig'; });
+    return parsed;
   } catch (e) {
     return { exercises: [], logs: [] };
   }
 }
 
+function loadSettings() {
+  try {
+    const raw = localStorage.getItem(SETTINGS_KEY);
+    if (!raw) return { unit: 'kg' };
+    return JSON.parse(raw);
+  } catch (e) {
+    return { unit: 'kg' };
+  }
+}
+
 function saveData() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+function saveSettings() {
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
 }
 
 function uid() {
@@ -22,30 +42,82 @@ function todayStr() {
   return new Date().toISOString().slice(0, 10);
 }
 
-function estimated1RM(weight, reps) {
-  if (reps <= 1) return weight;
-  return weight * (1 + reps / 30);
+function estimated1RM(weightKg, reps) {
+  if (reps <= 1) return weightKg;
+  return weightKg * (1 + reps / 30);
+}
+
+function kgToDisplay(kg) {
+  const val = settings.unit === 'lbs' ? kg * KG_TO_LBS : kg;
+  return Math.round(val * 10) / 10;
+}
+
+function displayToKg(value) {
+  return settings.unit === 'lbs' ? value / KG_TO_LBS : value;
 }
 
 const state = loadData();
+const settings = loadSettings();
 let selectedExerciseId = state.exercises[0]?.id || null;
+let activeTab = 'log';
 
 const exerciseListEl = document.getElementById('exercise-list');
 const emptyStateEl = document.getElementById('empty-state');
 const exerciseViewEl = document.getElementById('exercise-view');
 const exerciseTitleEl = document.getElementById('exercise-title');
+const exerciseMuscleTagEl = document.getElementById('exercise-muscle-tag');
 const setsContainerEl = document.getElementById('sets-container');
 const logDateEl = document.getElementById('log-date');
 const historyListEl = document.getElementById('history-list');
 const chartContainerEl = document.getElementById('chart-container');
 const chartEmptyEl = document.getElementById('chart-empty');
+const newExerciseMuscleEl = document.getElementById('new-exercise-muscle');
+const volumeListEl = document.getElementById('volume-list');
+const logTabEl = document.getElementById('log-tab');
+const volumeTabEl = document.getElementById('volume-tab');
 
+MUSCLE_GROUPS.forEach(group => {
+  const opt = document.createElement('option');
+  opt.value = group;
+  opt.textContent = group;
+  newExerciseMuscleEl.appendChild(opt);
+});
+
+// --- Tabs ---
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    activeTab = btn.dataset.tab;
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b === btn));
+    logTabEl.classList.toggle('hidden', activeTab !== 'log');
+    volumeTabEl.classList.toggle('hidden', activeTab !== 'volume');
+    if (activeTab === 'volume') renderVolume();
+  });
+});
+
+// --- Unit toggle ---
+document.querySelectorAll('.unit-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    settings.unit = btn.dataset.unit;
+    saveSettings();
+    document.querySelectorAll('.unit-btn').forEach(b => b.classList.toggle('active', b === btn));
+    updateWeightPlaceholders();
+    render();
+  });
+});
+
+function updateWeightPlaceholders() {
+  document.querySelectorAll('.weight-input').forEach(input => {
+    input.placeholder = settings.unit;
+  });
+}
+
+// --- Exercises ---
 document.getElementById('add-exercise-form').addEventListener('submit', (e) => {
   e.preventDefault();
   const input = document.getElementById('new-exercise-name');
   const name = input.value.trim();
   if (!name) return;
-  const exercise = { id: uid(), name };
+  const exercise = { id: uid(), name, muscleGroup: newExerciseMuscleEl.value };
   state.exercises.push(exercise);
   saveData();
   input.value = '';
@@ -77,9 +149,9 @@ document.getElementById('log-form').addEventListener('submit', (e) => {
   const sets = [];
   rows.forEach(row => {
     const reps = parseFloat(row.querySelector('.reps-input').value);
-    const weight = parseFloat(row.querySelector('.weight-input').value);
-    if (!isNaN(reps) && !isNaN(weight) && reps > 0) {
-      sets.push({ reps, weight });
+    const weightDisplay = parseFloat(row.querySelector('.weight-input').value);
+    if (!isNaN(reps) && !isNaN(weightDisplay) && reps > 0) {
+      sets.push({ reps, weight: displayToKg(weightDisplay) });
     }
   });
   if (sets.length === 0) return;
@@ -89,14 +161,14 @@ document.getElementById('log-form').addEventListener('submit', (e) => {
   render();
 });
 
-function addSetRow(reps = '', weight = '') {
+function addSetRow(reps = '', weightDisplay = '') {
   const index = setsContainerEl.children.length + 1;
   const row = document.createElement('div');
   row.className = 'set-row';
   row.innerHTML = `
     <span class="set-index">${index}</span>
     <input type="number" class="reps-input" placeholder="reps" min="1" step="1" value="${reps}">
-    <input type="number" class="weight-input" placeholder="kg" min="0" step="0.5" value="${weight}">
+    <input type="number" class="weight-input" placeholder="${settings.unit}" min="0" step="0.5" value="${weightDisplay}">
     <button type="button" class="remove-set-btn" title="Verwijder set">✕</button>
   `;
   row.querySelector('.remove-set-btn').addEventListener('click', () => {
@@ -120,6 +192,7 @@ function resetLogForm() {
 
 function selectExercise(id) {
   selectedExerciseId = id;
+  resetTimer();
   render();
 }
 
@@ -127,7 +200,7 @@ function renderExerciseList() {
   exerciseListEl.innerHTML = '';
   state.exercises.forEach(exercise => {
     const li = document.createElement('li');
-    li.textContent = exercise.name;
+    li.innerHTML = `${exercise.name}<span class="muscle-hint">${exercise.muscleGroup}</span>`;
     if (exercise.id === selectedExerciseId) li.classList.add('active');
     li.addEventListener('click', () => selectExercise(exercise.id));
     exerciseListEl.appendChild(li);
@@ -149,7 +222,7 @@ function renderHistory(logs) {
   [...logs].reverse().forEach(log => {
     const entry = document.createElement('div');
     entry.className = 'history-entry';
-    const chips = log.sets.map(s => `<span class="history-set-chip">${s.reps} × ${s.weight}kg</span>`).join('');
+    const chips = log.sets.map(s => `<span class="history-set-chip">${s.reps} × ${kgToDisplay(s.weight)}${settings.unit}</span>`).join('');
     entry.innerHTML = `
       <div class="history-entry-header">
         <span class="date">${formatDate(log.date)}</span>
@@ -180,8 +253,8 @@ function renderChart(logs) {
   chartEmptyEl.classList.add('hidden');
 
   const points = logs.map(log => {
-    const best = Math.max(...log.sets.map(s => estimated1RM(s.weight, s.reps)));
-    return { date: log.date, value: best };
+    const bestKg = Math.max(...log.sets.map(s => estimated1RM(s.weight, s.reps)));
+    return { date: log.date, value: kgToDisplay(bestKg) };
   });
 
   const width = Math.max(500, points.length * 70);
@@ -258,7 +331,7 @@ function renderChart(logs) {
     svg.appendChild(circle);
 
     const title = document.createElementNS(svgNS, 'title');
-    title.textContent = `${formatDate(p.date)}: ${Math.round(p.value)}kg geschat 1RM`;
+    title.textContent = `${formatDate(p.date)}: ${Math.round(p.value)}${settings.unit} geschat 1RM`;
     circle.appendChild(title);
 
     const label = document.createElementNS(svgNS, 'text');
@@ -274,6 +347,120 @@ function renderChart(logs) {
   chartContainerEl.appendChild(svg);
 }
 
+// --- Rest timer ---
+const timerDisplayEl = document.getElementById('timer-display');
+const timerStartBtn = document.getElementById('timer-start');
+const timerPauseBtn = document.getElementById('timer-pause');
+const timerResetBtn = document.getElementById('timer-reset');
+let timerDurationSeconds = 90;
+let timerRemaining = timerDurationSeconds;
+let timerInterval = null;
+let audioCtx = null;
+
+function formatTime(totalSeconds) {
+  const m = Math.floor(totalSeconds / 60);
+  const s = totalSeconds % 60;
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}
+
+function updateTimerDisplay() {
+  timerDisplayEl.textContent = formatTime(timerRemaining);
+  timerDisplayEl.classList.toggle('done', timerRemaining === 0);
+}
+
+function playBeep() {
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.frequency.value = 880;
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.15);
+  } catch (e) { /* audio not available */ }
+}
+
+document.querySelectorAll('.preset-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.preset-btn').forEach(b => b.classList.toggle('active', b === btn));
+    timerDurationSeconds = parseInt(btn.dataset.seconds, 10);
+    resetTimer();
+  });
+});
+
+timerStartBtn.addEventListener('click', () => {
+  if (timerInterval) return;
+  if (timerRemaining === 0) timerRemaining = timerDurationSeconds;
+  timerInterval = setInterval(() => {
+    timerRemaining -= 1;
+    updateTimerDisplay();
+    if (timerRemaining <= 0) {
+      clearInterval(timerInterval);
+      timerInterval = null;
+      playBeep();
+      setTimeout(playBeep, 300);
+      setTimeout(playBeep, 600);
+    }
+  }, 1000);
+});
+
+timerPauseBtn.addEventListener('click', () => {
+  clearInterval(timerInterval);
+  timerInterval = null;
+});
+
+timerResetBtn.addEventListener('click', resetTimer);
+
+function resetTimer() {
+  clearInterval(timerInterval);
+  timerInterval = null;
+  timerRemaining = timerDurationSeconds;
+  updateTimerDisplay();
+}
+
+// --- Volume overview (hypertrophy) ---
+function renderVolume() {
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - 7);
+  const cutoffStr = cutoff.toISOString().slice(0, 10);
+
+  const counts = {};
+  MUSCLE_GROUPS.forEach(g => { counts[g] = 0; });
+
+  state.logs.forEach(log => {
+    if (log.date < cutoffStr) return;
+    const exercise = state.exercises.find(e => e.id === log.exerciseId);
+    if (!exercise) return;
+    counts[exercise.muscleGroup] = (counts[exercise.muscleGroup] || 0) + log.sets.length;
+  });
+
+  volumeListEl.innerHTML = '';
+  const maxScale = 20;
+  MUSCLE_GROUPS.forEach(group => {
+    const count = counts[group] || 0;
+    const pct = Math.min(100, (count / maxScale) * 100);
+    let fillClass = 'low';
+    if (count >= 10 && count <= 20) fillClass = 'optimal';
+    else if (count > 20) fillClass = '';
+
+    const row = document.createElement('div');
+    row.className = 'volume-row';
+    row.innerHTML = `
+      <div class="volume-row-header">
+        <span>${group}</span>
+        <span class="count">${count} sets</span>
+      </div>
+      <div class="volume-bar-track">
+        <div class="volume-bar-fill ${fillClass}" style="width: ${pct}%"></div>
+      </div>
+    `;
+    volumeListEl.appendChild(row);
+  });
+}
+
+// --- Main render ---
 function render() {
   renderExerciseList();
 
@@ -293,11 +480,19 @@ function render() {
   emptyStateEl.classList.add('hidden');
   exerciseViewEl.classList.remove('hidden');
   exerciseTitleEl.textContent = exercise.name;
+  exerciseMuscleTagEl.textContent = exercise.muscleGroup;
 
   const logs = getLogsForExercise(selectedExerciseId);
   renderHistory(logs);
   renderChart(logs);
 }
 
+document.querySelectorAll('.unit-btn').forEach(btn => {
+  if (btn.dataset.unit === settings.unit) btn.classList.add('active');
+  else btn.classList.remove('active');
+});
+
 resetLogForm();
+updateWeightPlaceholders();
+updateTimerDisplay();
 render();

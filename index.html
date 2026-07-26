@@ -10,15 +10,25 @@
 <div class="app">
   <header class="app-header">
     <h1>💪 Krachttraining Tracker</h1>
+    <div class="unit-toggle" id="unit-toggle">
+      <button type="button" data-unit="kg" class="unit-btn active">kg</button>
+      <button type="button" data-unit="lbs" class="unit-btn">lbs</button>
+    </div>
   </header>
 
-  <main class="layout">
+  <nav class="tabs">
+    <button type="button" class="tab-btn active" data-tab="log">Trainingslog</button>
+    <button type="button" class="tab-btn" data-tab="volume">Spieropbouw</button>
+  </nav>
+
+  <main class="layout" id="log-tab">
     <aside class="sidebar">
       <h2>Oefeningen</h2>
       <form id="add-exercise-form" class="inline-form">
         <input type="text" id="new-exercise-name" placeholder="Nieuwe oefening..." required>
         <button type="submit">+</button>
       </form>
+      <select id="new-exercise-muscle" class="muscle-select-new"></select>
       <ul id="exercise-list" class="exercise-list"></ul>
     </aside>
 
@@ -29,8 +39,29 @@
 
       <div id="exercise-view" class="exercise-view hidden">
         <div class="content-header">
-          <h2 id="exercise-title"></h2>
+          <div>
+            <h2 id="exercise-title"></h2>
+            <span id="exercise-muscle-tag" class="muscle-tag"></span>
+          </div>
           <button id="delete-exercise-btn" class="danger-btn">Verwijder oefening</button>
+        </div>
+
+        <div class="card">
+          <h3>Rustperiode timer</h3>
+          <div class="timer-widget">
+            <div class="timer-display" id="timer-display">01:30</div>
+            <div class="timer-presets">
+              <button type="button" class="preset-btn" data-seconds="60">60s</button>
+              <button type="button" class="preset-btn active" data-seconds="90">90s</button>
+              <button type="button" class="preset-btn" data-seconds="120">120s</button>
+              <button type="button" class="preset-btn" data-seconds="180">180s</button>
+            </div>
+            <div class="timer-controls">
+              <button type="button" id="timer-start" class="primary-btn">Start</button>
+              <button type="button" id="timer-pause">Pauze</button>
+              <button type="button" id="timer-reset">Reset</button>
+            </div>
+          </div>
         </div>
 
         <div class="card">
@@ -61,6 +92,16 @@
         </div>
       </div>
     </section>
+  </main>
+
+  <main class="volume-page hidden" id="volume-tab">
+    <div class="content">
+      <div class="card">
+        <h3>Sets per spiergroep (afgelopen 7 dagen)</h3>
+        <p class="muted">Richtlijn voor spieropbouw: circa 10-20 sets per spiergroep per week.</p>
+        <div id="volume-list" class="volume-list"></div>
+      </div>
+    </div>
   </main>
 </div>
 

@@ -23,11 +23,54 @@ body {
 .app-header {
   padding: 20px 24px;
   border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .app-header h1 {
   margin: 0;
   font-size: 22px;
+}
+
+.unit-toggle {
+  display: flex;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.unit-btn {
+  background: var(--surface);
+  border: none;
+  border-radius: 0;
+  padding: 8px 14px;
+  color: var(--muted);
+}
+
+.unit-btn.active {
+  background: var(--accent);
+  color: white;
+}
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  padding: 12px 24px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.tab-btn {
+  background: transparent;
+  border-radius: 8px 8px 0 0;
+  color: var(--muted);
+  padding: 10px 18px;
+}
+
+.tab-btn.active {
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 600;
 }
 
 .layout {
@@ -61,6 +104,11 @@ body {
   min-width: 0;
 }
 
+.muscle-select-new {
+  width: 100%;
+  margin-bottom: 16px;
+}
+
 .exercise-list {
   list-style: none;
   margin: 0;
@@ -68,6 +116,18 @@ body {
   display: flex;
   flex-direction: column;
   gap: 4px;
+}
+
+.exercise-list .muscle-hint {
+  display: block;
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.exercise-list li.active .muscle-hint {
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .exercise-list li {
@@ -112,6 +172,98 @@ body {
 
 .content-header h2 {
   margin: 0;
+}
+
+.muscle-tag {
+  display: inline-block;
+  margin-top: 4px;
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: 12px;
+  padding: 2px 10px;
+  border-radius: 999px;
+}
+
+.timer-widget {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.timer-display {
+  font-size: 48px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+}
+
+.timer-display.done {
+  color: var(--danger);
+}
+
+.timer-presets {
+  display: flex;
+  gap: 8px;
+}
+
+.preset-btn.active {
+  background: var(--surface-2);
+  outline: 2px solid var(--accent);
+}
+
+.timer-controls {
+  display: flex;
+  gap: 10px;
+}
+
+.volume-page .content {
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.volume-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.volume-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.volume-row-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+}
+
+.volume-row-header .count {
+  color: var(--muted);
+}
+
+.volume-bar-track {
+  background: var(--surface-2);
+  border-radius: 999px;
+  height: 10px;
+  overflow: hidden;
+}
+
+.volume-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--accent);
+}
+
+.volume-bar-fill.low {
+  background: #5b6470;
+}
+
+.volume-bar-fill.optimal {
+  background: #3ecf7f;
 }
 
 .card {
